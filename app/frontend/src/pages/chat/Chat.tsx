@@ -28,6 +28,7 @@ import { useLogin, getToken } from "../../authConfig";
 import { useMsal } from "@azure/msal-react";
 import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { AttachmentType } from "../../components/AttachmentType";
+import { LogStreamPanel } from "../../components/LogStreamPanel/LogStreamPanel";
 
 
 const Chat = () => {
@@ -276,6 +277,9 @@ const Chat = () => {
 
             </div>
             <div className={styles.chatRoot}>
+                <div className={styles.logPanelWrapper}>
+                    <LogStreamPanel />
+                </div>
                 <div className={styles.chatContainer}>
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>

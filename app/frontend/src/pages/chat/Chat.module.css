@@ -8,6 +8,17 @@
 .chatRoot {
     flex: 1;
     display: flex;
+    gap: 20px;
+}
+
+.logPanelWrapper {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+}
+
+.logPanelWrapper > * {
+    width: 100%;
 }
 
 .chatContainer {
@@ -112,4 +123,10 @@
 .commandButton {
     margin-right: 20px;
     margin-bottom: 20px;
+}
+
+@media (max-width: 1200px) {
+    .logPanelWrapper {
+        display: none;
+    }
 }
