@@ -14,38 +14,38 @@ public class UserService {
 
     public UserService() {
         accounts.put(
-                "alice.user@contoso.com",
+                "carolina.lopez@coemlatam.com",
                 new Account(
                         "1000",
-                        "alice.user@contoso.com",
-                        "Alice User",
-                        "USD",
-                        "2022-01-01",
-                        "5000",
-                       null
+                        "carolina.lopez@coemlatam.com",
+                        "Carolina López",
+                        "MXN",
+                        "2021-03-15",
+                        "125000",
+                        null
                 )
         );
         accounts.put(
-                "bob.user@contoso.com",
+                "diego.ramirez@coemlatam.com",
                 new Account(
                         "1010",
-                        "bob.user@contoso.com",
-                        "Bob User",
-                        "EUR",
-                        "2022-01-01",
-                        "10000",
-                       null
+                        "diego.ramirez@coemlatam.com",
+                        "Diego Ramírez",
+                        "COP",
+                        "2020-07-01",
+                        "8400000",
+                        null
                 )
         );
         accounts.put(
-                "charlie.user@contoso.com",
+                "luisa.martinez@coemlatam.com",
                 new Account(
                         "1020",
-                        "charlie.user@contoso.com",
-                        "Charlie User",
-                        "EUR",
-                        "2022-01-01",
-                        "3000",
+                        "luisa.martinez@coemlatam.com",
+                        "Luisa Martínez",
+                        "CLP",
+                        "2022-05-10",
+                        "2750000",
                         null
                 )
         );

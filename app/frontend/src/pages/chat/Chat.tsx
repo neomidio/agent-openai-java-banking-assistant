@@ -144,7 +144,7 @@ const Chat = () => {
 
             const response = await chatApi(request, token?.accessToken);
             if (!response.body) {
-                throw Error("No response body");
+                throw Error("La respuesta del servicio no contiene datos");
             }
             if (stream) {
                 const parsedResponse: ChatAppResponse = await handleAsyncRequest(questionContext.question,questionContext.attachments || [], answers, setAnswers, response.body);
@@ -152,7 +152,7 @@ const Chat = () => {
             } else {
                 const parsedResponse: ChatAppResponseOrError = await response.json();
                 if (response.status > 299 || !response.ok) {
-                    throw Error(parsedResponse.error || "Unknown error");
+                    throw Error(parsedResponse.error || "Error desconocido");
                 }
                 setAnswers([...answers, [questionContext.question,questionContext.attachments || [], parsedResponse as ChatAppResponse]]);
             }
@@ -256,7 +256,7 @@ const Chat = () => {
     const approaches: IChoiceGroupOption[] = [
         {
             key: Approaches.JAVA_OPENAI_SDK,
-            text: "Java Azure Open AI SDK"
+            text: "Java Azure OpenAI SDK"
         },
         /* Pending Semantic Kernel Memory implementation in V1.0.0
         {
@@ -265,7 +265,7 @@ const Chat = () => {
         },*/
         {
             key: Approaches.JAVA_SEMANTIC_KERNEL_PLANNER,
-            text: "Java Semantic Kernel - Orchestration"
+            text: "Java Semantic Kernel - Orquestación"
         }
     ];
 
@@ -279,9 +279,9 @@ const Chat = () => {
                 <div className={styles.chatContainer}>
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
-                            <SparkleFilled fontSize={"120px"} primaryFill={"rgba(115, 118, 225, 1)"} aria-hidden="true" aria-label="Chat logo" />
-                            <h1 className={styles.chatEmptyStateTitle}>Chat with your personal assistant</h1>
-                            <h2 className={styles.chatEmptyStateSubtitle}>Ask anything about your banking account details and payments or try an example</h2>
+                            <SparkleFilled fontSize={"120px"} primaryFill={"rgba(115, 118, 225, 1)"} aria-hidden="true" aria-label="Logotipo del chat" />
+                            <h1 className={styles.chatEmptyStateTitle}>Conversa con tu asistente bancario</h1>
+                            <h2 className={styles.chatEmptyStateSubtitle}>Pregunta todo sobre tus cuentas y pagos o elige un ejemplo para comenzar</h2>
                             <ExampleList onExampleClicked={onExampleClicked} />
                         </div>
                     ) : (
@@ -347,7 +347,7 @@ const Chat = () => {
                     <div className={styles.chatInput}>
                         <QuestionInput
                             clearOnSend
-                            placeholder="Type a new question"
+                            placeholder="Escribe una nueva pregunta"
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                         />
@@ -366,17 +366,17 @@ const Chat = () => {
                 )}
 
                 <Panel
-                    headerText="Configure answer generation"
+                    headerText="Configurar generación de respuestas"
                     isOpen={isConfigPanelOpen}
                     isBlocking={false}
                     onDismiss={() => setIsConfigPanelOpen(false)}
-                    closeButtonAriaLabel="Close"
-                    onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>Close</DefaultButton>}
+                    closeButtonAriaLabel="Cerrar"
+                    onRenderFooterContent={() => <DefaultButton onClick={() => setIsConfigPanelOpen(false)}>Cerrar</DefaultButton>}
                     isFooterAtBottom={true}
                 >
                     <ChoiceGroup
                         className={styles.chatSettingsSeparator}
-                        label="Approach"
+                        label="Estrategia"
                         options={approaches}
                         defaultSelectedKey={approach}
                         onChange={onApproachChange}
@@ -386,7 +386,7 @@ const Chat = () => {
                         <TextField
                             className={styles.chatSettingsSeparator}
                             defaultValue={promptTemplate}
-                            label="Override prompt template"
+                            label="Personalizar plantilla de prompt"
                             multiline
                             autoAdjustHeight
                             onChange={onPromptTemplateChange}
@@ -395,10 +395,10 @@ const Chat = () => {
                     {(approach === Approaches.JAVA_SEMANTIC_KERNEL_PLANNER) && (
                         <Dropdown
                             className={styles.oneshotSettingsSeparator}
-                            label="Semantic Kernel mode"
+                            label="Modo de Semantic Kernel"
                             options={[
-                                { key: "chains", text: "Function Chaining", selected: skMode == SKMode.Chains, data: SKMode.Chains },
-                                { key: "planner", text: "Planner", selected: skMode == SKMode.Planner, data: SKMode.Planner, disabled: true }
+                                { key: "chains", text: "Encadenamiento de funciones", selected: skMode == SKMode.Chains, data: SKMode.Chains },
+                                { key: "planner", text: "Planificador", selected: skMode == SKMode.Planner, data: SKMode.Planner, disabled: true }
                             ]}
                             required
                             onChange={onSKModeChange}
@@ -407,37 +407,37 @@ const Chat = () => {
 
                     <SpinButton
                         className={styles.chatSettingsSeparator}
-                        label="Retrieve this many search results:"
+                        label="Número de resultados a recuperar:"
                         min={1}
                         max={50}
                         defaultValue={retrieveCount.toString()}
                         onChange={onRetrieveCountChange}
                     />
-                    <TextField className={styles.chatSettingsSeparator} label="Exclude category" onChange={onExcludeCategoryChanged} />
+                    <TextField className={styles.chatSettingsSeparator} label="Excluir categoría" onChange={onExcludeCategoryChanged} />
                     <Checkbox
                         className={styles.chatSettingsSeparator}
                         checked={useSemanticRanker}
-                        label="Use semantic ranker for retrieval"
+                        label="Usar ranker semántico para la búsqueda"
                         onChange={onUseSemanticRankerChange}
                     />
                     <Checkbox
                         className={styles.chatSettingsSeparator}
                         checked={useSemanticCaptions}
-                        label="Use query-contextual summaries instead of whole documents"
+                        label="Usar resúmenes contextualizados en lugar de documentos completos"
                         onChange={onUseSemanticCaptionsChange}
                         disabled={!useSemanticRanker}
                     />
                     <Checkbox
                         className={styles.chatSettingsSeparator}
                         checked={useSuggestFollowupQuestions}
-                        label="Suggest follow-up questions"
+                        label="Sugerir preguntas de seguimiento"
                         onChange={onUseSuggestFollowupQuestionsChange}
                     />
                     {useLogin && (
                         <Checkbox
                             className={styles.chatSettingsSeparator}
                             checked={useOidSecurityFilter}
-                            label="Use oid security filter"
+                            label="Aplicar filtro de seguridad por OID"
                             disabled={!client?.getActiveAccount()}
                             onChange={onUseOidSecurityFilterChange}
                         />
@@ -446,18 +446,18 @@ const Chat = () => {
                         <Checkbox
                             className={styles.chatSettingsSeparator}
                             checked={useGroupsSecurityFilter}
-                            label="Use groups security filter"
+                            label="Aplicar filtro de seguridad por grupos"
                             disabled={!client?.getActiveAccount()}
                             onChange={onUseGroupsSecurityFilterChange}
                         />
                     )}
                     <Dropdown
                         className={styles.chatSettingsSeparator}
-                        label="Retrieval mode"
+                        label="Modo de búsqueda"
                         options={[
-                            { key: "hybrid", text: "Vectors + Text (Hybrid)", selected: retrievalMode == RetrievalMode.Hybrid, data: RetrievalMode.Hybrid },
-                            { key: "vectors", text: "Vectors", selected: retrievalMode == RetrievalMode.Vectors, data: RetrievalMode.Vectors },
-                            { key: "text", text: "Text", selected: retrievalMode == RetrievalMode.Text, data: RetrievalMode.Text }
+                            { key: "hybrid", text: "Vectores + Texto (Híbrido)", selected: retrievalMode == RetrievalMode.Hybrid, data: RetrievalMode.Hybrid },
+                            { key: "vectors", text: "Vectores", selected: retrievalMode == RetrievalMode.Vectors, data: RetrievalMode.Vectors },
+                            { key: "text", text: "Texto", selected: retrievalMode == RetrievalMode.Text, data: RetrievalMode.Text }
                         ]}
                         required
                         onChange={onRetrievalModeChange}
@@ -466,7 +466,7 @@ const Chat = () => {
                         <Checkbox
                             className={styles.chatSettingsSeparator}
                             checked={shouldStream}
-                            label="Stream chat completion responses"
+                            label="Transmitir respuestas en tiempo real"
                             onChange={onShouldStreamChange}
                         />
                     }

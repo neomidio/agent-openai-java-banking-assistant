@@ -41,7 +41,7 @@ export const TokenClaimsDisplay = () => {
                 return a.name.localeCompare(b.name);
             },
             renderHeaderCell: () => {
-                return "Name";
+                return "Nombre";
             },
             renderCell: item => {
                 return item.name;
@@ -53,7 +53,7 @@ export const TokenClaimsDisplay = () => {
                 return a.value.localeCompare(b.value);
             },
             renderHeaderCell: () => {
-                return "Value";
+                return "Valor";
             },
             renderCell: item => {
                 return item.value;
@@ -63,7 +63,7 @@ export const TokenClaimsDisplay = () => {
 
     return (
         <div>
-            <Label>ID Token Claims</Label>
+            <Label>Reclamos del token ID</Label>
             <DataGrid items={items} columns={columns} sortable getRowId={item => item.name}>
                 <DataGridHeader>
                     <DataGridRow>{({ renderHeaderCell }) => <DataGridHeaderCell>{renderHeaderCell()}</DataGridHeaderCell>}</DataGridRow>

@@ -28,25 +28,31 @@ public class PaymentService {
     public void processPayment(Payment payment) {
 
         if (payment.accountId() == null || payment.accountId().isEmpty())
-            throw new IllegalArgumentException("AccountId is empty or null");
+            throw new IllegalArgumentException("El identificador de cuenta está vacío o es nulo");
         try {
             Integer.parseInt(payment.accountId());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("AccountId is not a valid number");
+            throw new IllegalArgumentException("El identificador de cuenta no es un número válido");
         }
 
-        if (!payment.paymentType().equalsIgnoreCase("transfer") && (payment.paymentMethodId() == null || payment.paymentMethodId().isEmpty()))
-            throw new IllegalArgumentException("paymentMethodId is empty or null");
+        boolean isTransfer = payment.paymentType().equalsIgnoreCase("transfer")
+                || payment.paymentType().equalsIgnoreCase("transferencia")
+                || payment.paymentType().equalsIgnoreCase("transferencia bancaria");
 
-        try {
-            Integer.parseInt(payment.paymentMethodId());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("paymentMethodId is not a valid number");
+        if (!isTransfer && (payment.paymentMethodId() == null || payment.paymentMethodId().isEmpty()))
+            throw new IllegalArgumentException("El identificador del método de pago está vacío o es nulo");
+
+        if (!isTransfer) {
+            try {
+                Integer.parseInt(payment.paymentMethodId());
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("El identificador del método de pago no es un número válido");
+            }
         }
 
 
         // Log the payment details
-        logger.info("Payment successful for: {}", payment.toString());
+        logger.info("Pago procesado correctamente: {}", payment.toString());
 
         // Convert the Payment object into a Transaction object
         Transaction transaction = convertPaymentToTransaction(payment);
@@ -55,7 +61,7 @@ public class PaymentService {
          * Make the POST request. The transaction is sent to the transaction API. In a real scenario this would be an event published to a hub and consumed by the transaction API.
          */
 
-        logger.info("Notifying payment [{}] for account[{}]..", payment.description() , transaction.accountId());
+        logger.info("Notificando pago [{}] para la cuenta[{}]..", payment.description() , transaction.accountId());
         webClientBuilder.build()
                 .post()
                 .uri(transactionAPIUrl + "/transactions/{accountId}", payment.accountId())
@@ -63,7 +69,7 @@ public class PaymentService {
                 .body(BodyInserters.fromValue(transaction))
                 .retrieve()
                 .bodyToMono(String.class)
-                .subscribe(response -> logger.info("Transaction notified for: {}", transaction.toString()));
+                .subscribe(response -> logger.info("Transacción notificada: {}", transaction.toString()));
     }
 
     private Transaction convertPaymentToTransaction(Payment payment) {

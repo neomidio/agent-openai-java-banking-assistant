@@ -28,10 +28,10 @@ export const LoginButton = () => {
             })
             .catch(error => console.log(error));
     };
-    const logoutText = `Logout\n${activeAccount?.username}`;
+    const logoutText = `Cerrar sesión\n${activeAccount?.username}`;
     return (
         <DefaultButton
-            text={activeAccount ? logoutText : "Login"}
+            text={activeAccount ? logoutText : "Iniciar sesión"}
             className={styles.loginButton}
             onClick={activeAccount ? handleLogoutPopup : handleLoginPopup}
         ></DefaultButton>
