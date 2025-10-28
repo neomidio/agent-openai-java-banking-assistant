@@ -11,13 +11,13 @@ interface Props {
 export const AnswerError = ({ error, onRetry }: Props) => {
     return (
         <Stack className={styles.answerContainer} verticalAlign="space-between">
-            <ErrorCircle24Regular aria-hidden="true" aria-label="Error icon" primaryFill="red" />
+            <ErrorCircle24Regular aria-hidden="true" aria-label="Ícono de error" primaryFill="red" />
 
             <Stack.Item grow>
                 <p className={styles.answerText}>{error}</p>
             </Stack.Item>
 
-            <PrimaryButton className={styles.retryButton} onClick={onRetry} text="Retry" />
+            <PrimaryButton className={styles.retryButton} onClick={onRetry} text="Reintentar" />
         </Stack>
     );
 };

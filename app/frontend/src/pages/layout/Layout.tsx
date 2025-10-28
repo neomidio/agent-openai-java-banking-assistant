@@ -14,22 +14,28 @@ const Layout = () => {
             <header className={styles.header} role={"banner"}>
                 <div className={styles.headerContainer}>
                     <Link to="/" className={styles.headerTitleContainer}>
-                        <h3 className={styles.headerTitle}>Agents Java Sample</h3>
+                        <h3 className={styles.headerTitle}>Controles Empresariales</h3>
                     </Link>
                     <nav>
                         <ul className={styles.headerNavList}>
                             <li>
                                 <NavLink to="/" className={({ isActive }) => (isActive ? styles.headerNavPageLinkActive : styles.headerNavPageLink)}>
-                                    Chat
+                                    Chat bancario
                                 </NavLink>
                             </li>
 
                             <li className={styles.headerNavLeftMargin}>
-                                <a href="https://github.com/dantelmomsft/personal-finance-assistant-java" target={"_blank"} title="Github repository link">
+                                <a href="https://controlesempresariales.com" target={"_blank"} title="Sitio de Controles Empresariales" rel="noreferrer">
+                                    controlesempresariales.com
+                                </a>
+                            </li>
+
+                            <li className={styles.headerNavLeftMargin}>
+                                <a href="https://github.com/dantelmomsft/personal-finance-assistant-java" target={"_blank"} title="Repositorio en GitHub" rel="noreferrer">
                                     <img
                                         src={github}
-                                        alt="Github logo"
-                                        aria-label="Link to github repository"
+                                        alt="Logotipo de GitHub"
+                                        aria-label="Enlace al repositorio de GitHub"
                                         width="20px"
                                         height="20px"
                                         className={styles.githubLogo}
@@ -38,7 +44,7 @@ const Layout = () => {
                             </li>
                         </ul>
                     </nav>
-                    <h4 className={styles.headerRightText}>Banking Assistance Copilot</h4>
+                    <h4 className={styles.headerRightText}>ExperiencIA BancarIA COEM</h4>
                     {useLogin && <LoginButton />}
                 </div>
             </header>

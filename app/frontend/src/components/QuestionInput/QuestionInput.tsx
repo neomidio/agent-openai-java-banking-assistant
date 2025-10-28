@@ -46,12 +46,12 @@ export const  QuestionInput = ({ onSend, disabled, placeholder, clearOnSend }: P
         if( attachmentRef != null){
            
            setIsUploading(true); 
-           console.log("Uploading file... "+ attachmentRef.name);
+           console.log("Subiendo archivo... "+ attachmentRef.name);
            //await uploadAttachment(attachmentRef);
          
            uploadAttachment(attachmentRef)
             .then((response) => {
-                console.log("File uploaded.");
+                console.log("Archivo cargado.");
                 setIsUploading(false);
                 internalSendQuestion()
                 })
@@ -105,9 +105,9 @@ export const  QuestionInput = ({ onSend, disabled, placeholder, clearOnSend }: P
              {previewImage && (
                     
                     <div className={styles.attachmentContainer}>
-                    <img className={styles.imagePreview} src={previewImage} alt="" />
+                    <img className={styles.imagePreview} src={previewImage} alt="Vista previa del adjunto" />
                     <Button size="small" icon={<Delete16Filled primaryFill="rgba(115, 118, 225, 1)" />} onClick={onAttachDelete}  />
-                        { isUploading && (<p>Uploading File...</p>)}
+                        { isUploading && (<p>Subiendo archivo...</p>)}
                    </div>
                 )}
             <TextField
@@ -121,13 +121,13 @@ export const  QuestionInput = ({ onSend, disabled, placeholder, clearOnSend }: P
                 onKeyDown={onEnterPress}
             />
              <div className={styles.questionInputButtonsContainer}>
-                <Tooltip content="Attachement" relationship="label">
+                <Tooltip content="Adjuntar archivo" relationship="label">
                     <Button size="large" icon={<Attach24Filled primaryFill="rgba(115, 118, 225, 1)" />}  onClick={onAttach} />
                 </Tooltip>
                 <input type='file' id='file' ref={inputFile} style={{display: 'none'}} onChange={onFileSelected} accept="image/png, image/jpeg"/>
             </div>
             <div className={styles.questionInputButtonsContainer}>
-                <Tooltip content="Ask question button" relationship="label">
+                <Tooltip content="Enviar pregunta" relationship="label">
                     <Button size="large" icon={<Send28Filled primaryFill="rgba(115, 118, 225, 1)" />} disabled={sendQuestionDisabled} onClick={sendQuestion} />
                 </Tooltip>
             </div>
