@@ -330,6 +330,9 @@ const Chat = () => {
 
             </div>
             <div className={styles.chatRoot}>
+                <div className={styles.logPanelWrapper}>
+                    <LogStreamPanel />
+                </div>
                 <div className={styles.chatContainer}>
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>

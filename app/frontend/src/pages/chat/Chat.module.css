@@ -10,6 +10,17 @@
     display: flex;
     align-items: flex-start;
     gap: 20px;
+    gap: 20px;
+}
+
+.logPanelWrapper {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+}
+
+.logPanelWrapper > * {
+    width: 100%;
 }
 
 .chatContainer {
@@ -158,6 +169,7 @@
 
 @media (max-width: 1200px) {
     .sessionInspector {
+    .logPanelWrapper {
         display: none;
     }
 }

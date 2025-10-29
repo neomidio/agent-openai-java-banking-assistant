@@ -32,6 +32,11 @@ type LogStreamPanelProps = {
 
 export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
     const [isVisible, setIsVisible] = useState<boolean>(true);
+const STREAM_ENDPOINT = "/api/logs/stream";
+const HISTORY_ENDPOINT = "/api/logs";
+
+export const LogStreamPanel = () => {
+    const [isVisible, setIsVisible] = useState<boolean>(false);
     const [logs, setLogs] = useState<LogEvent[]>([]);
     const [error, setError] = useState<string | undefined>();
     const eventSourceRef = useRef<EventSource | null>(null);
@@ -79,6 +84,7 @@ export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
             });
 
         const eventSource = new EventSource(STREAM_ENDPOINT, { withCredentials: true });
+        const eventSource = new EventSource(STREAM_ENDPOINT);
         eventSource.addEventListener("log", event => {
             try {
                 const parsed = JSON.parse((event as MessageEvent).data) as LogEvent;
@@ -166,6 +172,7 @@ export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
                 {currentUserEmail
                     ? `Observa la actividad generada para ${currentUserEmail}.`
                     : "Selecciona un usuario para contextualizar los eventos registrados."}
+                Activa el panel para seguir en tiempo real los eventos internos de la aplicación.
             </p>
             <DefaultButton
                 iconProps={{ iconName: "Download" }}
@@ -214,6 +221,23 @@ export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
                         <div ref={mcpLogEndRef} />
                     </div>
                 </section>
+                disabled={!isVisible || logs.length === 0}
+            />
+            <div className={isVisible ? styles.logViewport : styles.logViewportHidden}>
+                {error ? (
+                    <div className={styles.feedback} role="alert">
+                        {error}
+                    </div>
+                ) : logs.length === 0 ? (
+                    <div className={styles.feedback}>No hay eventos para mostrar todavía.</div>
+                ) : (
+                    logs.map((entry, index) => (
+                        <pre key={`${entry.timestamp}-${index}`} className={styles.logEntry}>
+                            {formatLogLine(entry)}
+                        </pre>
+                    ))
+                )}
+                <div ref={logEndRef} />
             </div>
         </aside>
     );
