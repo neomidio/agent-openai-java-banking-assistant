@@ -1,0 +1,108 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    max-height: calc(100vh - 160px);
+    min-width: 280px;
+    gap: 12px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.title {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.description {
+    margin: 8px 0 12px 0;
+    color: #4b5563;
+    font-size: 0.85rem;
+}
+
+.downloadButton {
+    align-self: flex-start;
+}
+
+.sections {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sectionTitle {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+.mcpBadge {
+    background: #1d4ed8;
+    color: #f8fafc;
+    border-radius: 9999px;
+    padding: 0 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.logViewport {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 12px;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.hidden {
+    display: none;
+}
+
+.logEntry {
+    margin: 0 0 8px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.feedback {
+    color: #cbd5f5;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 1200px) {
+    .wrapper {
+        min-width: 0;
+        width: 100%;
+        max-height: none;
+    }
+
+    .logViewport {
+        max-height: 280px;
+    }
+}

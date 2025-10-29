@@ -60,6 +60,7 @@ export type ChatAppResponse = {
 
 export type ChatAppRequestContext = {
     overrides?: ChatAppRequestOverrides;
+    userEmail?: string;
 };
 
 export type ChatAppRequest = {
@@ -68,4 +69,11 @@ export type ChatAppRequest = {
     context?: ChatAppRequestContext;
     stream?: boolean;
     session_state: any;
+};
+
+export type DemoUser = {
+    email: string;
+    displayName: string;
+    accountId: string;
+    currency: string;
 };

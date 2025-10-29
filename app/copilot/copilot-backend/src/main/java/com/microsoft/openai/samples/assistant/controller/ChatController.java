@@ -3,11 +3,15 @@ package com.microsoft.openai.samples.assistant.controller;
 
 
 import com.microsoft.openai.samples.assistant.langchain4j.agent.SupervisorAgent;
+import com.microsoft.openai.samples.assistant.langchain4j.factory.SupervisorAgentFactory;
+import com.microsoft.openai.samples.assistant.session.DemoUser;
+import com.microsoft.openai.samples.assistant.session.DemoUserRegistry;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,15 +23,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class ChatController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
-    private final SupervisorAgent supervisorAgent;
+    private final SupervisorAgentFactory supervisorAgentFactory;
+    private final DemoUserRegistry demoUserRegistry;
 
-    public ChatController(SupervisorAgent supervisorAgent){
-        this.supervisorAgent = supervisorAgent;
+    public ChatController(SupervisorAgentFactory supervisorAgentFactory, DemoUserRegistry demoUserRegistry){
+        this.supervisorAgentFactory = supervisorAgentFactory;
+        this.demoUserRegistry = demoUserRegistry;
     }
 
 
@@ -50,14 +57,39 @@ public class ChatController {
 
         List<ChatMessage> chatHistory = convertToLangchain4j(chatRequest);
 
+        String requestedUserEmail = null;
+        if (chatRequest.context() != null) {
+            requestedUserEmail = chatRequest.context().userEmail();
+        }
 
-        LOGGER.debug("Processing chat conversation..", chatHistory.get(chatHistory.size()-1));
+        DemoUser effectiveUser = demoUserRegistry.findByEmail(requestedUserEmail)
+                .orElseGet(demoUserRegistry::defaultUser);
 
-        List<ChatMessage> agentsResponse = supervisorAgent.invoke(chatHistory);
+        if (requestedUserEmail != null && !effectiveUser.email().equalsIgnoreCase(requestedUserEmail)) {
+            LOGGER.warn("Requested demo user [{}] was not recognised. Falling back to [{}]", requestedUserEmail, effectiveUser.email());
+        }
 
-        AiMessage generatedResponse = (AiMessage) agentsResponse.get(agentsResponse.size()-1);
-        return ResponseEntity.ok(
-                ChatResponse.buildChatResponse(generatedResponse));
+        Map<String, String> previousContext = MDC.getCopyOfContextMap();
+        MDC.put("demoUserEmail", effectiveUser.email());
+        MDC.put("demoAccountId", effectiveUser.accountId());
+
+        try {
+            LOGGER.info("Procesando conversación para [{}] (cuenta {})", effectiveUser.email(), effectiveUser.accountId());
+
+            SupervisorAgent supervisorAgent = supervisorAgentFactory.createForUser(effectiveUser.email());
+
+            List<ChatMessage> agentsResponse = supervisorAgent.invoke(chatHistory);
+
+            AiMessage generatedResponse = (AiMessage) agentsResponse.get(agentsResponse.size()-1);
+            return ResponseEntity.ok(
+                    ChatResponse.buildChatResponse(generatedResponse));
+        } finally {
+            if (previousContext == null || previousContext.isEmpty()) {
+                MDC.clear();
+            } else {
+                MDC.setContextMap(previousContext);
+            }
+        }
     }
 
     private List<ChatMessage> convertToLangchain4j(ChatAppRequest chatAppRequest) {

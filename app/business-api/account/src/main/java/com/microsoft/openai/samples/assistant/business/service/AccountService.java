@@ -50,9 +50,10 @@ public class AccountService {
                 Arrays.asList(new PaymentMethodSummary("46748576", "Débito automático", "2022-05-10", "9999-12-31"))));
 
         this.paymentMethods.put("12345", new PaymentMethod("12345", "Tarjeta Visa", "2021-03-15", "2025-03-15", "15000.00", "5489123498761234"));
-        this.paymentMethods.put("55555", new PaymentMethod("55555", "Tarjeta Visa", "2023-02-01", "2027-02-01", "9200.00", "4598120099134472"));
+        this.paymentMethods.put("55555", new PaymentMethod("55555", "Tarjeta Visa", "2020-07-01", "2026-07-01", "9200.00", "4598120099134472"));
         this.paymentMethods.put("23456", new PaymentMethod("23456", "Transferencia bancaria", "2021-03-15", "9999-12-31", "120000.00", null));
         this.paymentMethods.put("345678", new PaymentMethod("345678", "Transferencia bancaria", "2020-07-01", "9999-12-31", "2100000.00", null));
+        this.paymentMethods.put("46748576", new PaymentMethod("46748576", "Débito automático", "2022-05-10", "9999-12-31", "275000.00", null));
     }
 
     public Account getAccountDetails(String accountId) {
