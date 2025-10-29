@@ -73,6 +73,10 @@ public class ChatController {
         MDC.put("demoUserEmail", effectiveUser.email());
         MDC.put("demoAccountId", effectiveUser.accountId());
 
+        LOGGER.debug("Processing chat conversation for user [{}]", effectiveUser.email());
+
+        SupervisorAgent supervisorAgent = supervisorAgentFactory.createForUser(effectiveUser.email());
+
         try {
             LOGGER.info("Procesando conversación para [{}] (cuenta {})", effectiveUser.email(), effectiveUser.accountId());
 

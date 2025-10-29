@@ -81,6 +81,7 @@
 }
 
 .hidden {
+.logViewportHidden {
     display: none;
 }
 
@@ -88,18 +89,6 @@
     margin: 0 0 8px 0;
     white-space: pre-wrap;
     word-break: break-word;
-}
-
-.logEntryInfo {
-    color: #cbd5f5;
-}
-
-.logEntryWarn {
-    color: #fde68a;
-}
-
-.logEntryError {
-    color: #fca5a5;
 }
 
 .feedback {
