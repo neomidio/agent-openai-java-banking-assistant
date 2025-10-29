@@ -1,7 +1,7 @@
-import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest } from "./models";
+import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, DemoUser } from "./models";
 import { useLogin } from "../authConfig";
 
-const BACKEND_URI = import.meta.env.VITE_BACKEND_URI ? import.meta.env.VITE_BACKEND_URI : "";
+export const BACKEND_URI = import.meta.env.VITE_BACKEND_URI ? import.meta.env.VITE_BACKEND_URI : "";
 
 function getHeaders(idToken: string | undefined, stream:boolean): Record<string, string> {
     var headers: Record<string, string> = {
@@ -44,6 +44,21 @@ export async function chatApi(request: ChatAppRequest, idToken: string | undefin
         headers: getHeaders(idToken, request.stream || false),
         body: JSON.stringify(request)
     });
+}
+
+export async function fetchDemoUsers(): Promise<DemoUser[]> {
+    const response = await fetch(`${BACKEND_URI}/session/users`, {
+        method: "GET",
+        headers: {
+            "Accept": "application/json"
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error("No se pudo recuperar la lista de usuarios de demostración");
+    }
+
+    return response.json() as Promise<DemoUser[]>;
 }
 
 export function getCitationFilePath(citation: string): string {

@@ -8,6 +8,8 @@
 .chatRoot {
     flex: 1;
     display: flex;
+    align-items: flex-start;
+    gap: 20px;
 }
 
 .chatContainer {
@@ -16,6 +18,46 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
+}
+
+.sessionInspector {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.userSelectorCard {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.userSelectorTitle {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.userSelectorDescription {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.9rem;
+}
+
+.userSummary {
+    font-size: 0.85rem;
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.userError {
+    font-size: 0.85rem;
+    color: #b91c1c;
 }
 
 .chatEmptyState {
@@ -112,4 +154,10 @@
 .commandButton {
     margin-right: 20px;
     margin-bottom: 20px;
+}
+
+@media (max-width: 1200px) {
+    .sessionInspector {
+        display: none;
+    }
 }
