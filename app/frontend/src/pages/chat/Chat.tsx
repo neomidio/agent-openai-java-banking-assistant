@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect } from "react";
-import { Checkbox, ChoiceGroup, Panel, DefaultButton, TextField, SpinButton, Dropdown, IDropdownOption, IChoiceGroupOption } from "@fluentui/react";
+import { useRef, useState, useEffect, useMemo } from "react";
+import { Checkbox, ChoiceGroup, Panel, DefaultButton, TextField, SpinButton, Dropdown, IDropdownOption, IChoiceGroupOption, IDropdownStyles } from "@fluentui/react";
 import { SparkleFilled } from "@fluentui/react-icons";
 import readNDJSONStream from "ndjson-readablestream";
 
@@ -14,7 +14,9 @@ import {
     ChatAppRequest,
     ResponseMessage,
     Approaches,
-    SKMode
+    SKMode,
+    fetchDemoUsers,
+    DemoUser
 } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
@@ -22,7 +24,6 @@ import { QuestionContextType } from "../../components/QuestionInput/QuestionCont
 import { ExampleList } from "../../components/Example";
 import { UserChatMessage } from "../../components/UserChatMessage";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
-import { SettingsButton } from "../../components/SettingsButton";
 import { ClearChatButton } from "../../components/ClearChatButton";
 import { useLogin, getToken } from "../../authConfig";
 import { useMsal } from "@azure/msal-react";
@@ -61,6 +62,10 @@ const Chat = () => {
     const [selectedAnswer, setSelectedAnswer] = useState<number>(0);
     const [answers, setAnswers] = useState<[user: string, attachments: string[], response: ChatAppResponse][]>([]);
     const [streamedAnswers, setStreamedAnswers] = useState<[user: string, attachments: string[], response: ChatAppResponse][]>([]);
+    const [demoUsers, setDemoUsers] = useState<DemoUser[]>([]);
+    const [selectedUser, setSelectedUser] = useState<DemoUser | undefined>(undefined);
+    const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(false);
+    const [userLoadError, setUserLoadError] = useState<string | undefined>();
 
     const handleAsyncRequest = async (question: string, attachments: string[], answers: [string, string[],ChatAppResponse][], setAnswers: Function, responseBody: ReadableStream<any>) => {
         let answer: string = "";
@@ -112,6 +117,12 @@ const Chat = () => {
         setActiveCitation(undefined);
         setActiveAnalysisPanelTab(undefined);
 
+        if (!selectedUser) {
+            setError(new Error("Selecciona un usuario para continuar"));
+            setIsLoading(false);
+            return;
+        }
+
         const token = client ? await getToken(client) : undefined;
 
         try {
@@ -136,7 +147,8 @@ const Chat = () => {
                         use_oid_security_filter: useOidSecurityFilter,
                         use_groups_security_filter: useGroupsSecurityFilter,
                         semantic_kernel_mode: skMode
-                    }
+                    },
+                    userEmail: selectedUser.email
                 },
                 approach: approach,
                 // ChatAppProtocol: Client must pass on any session state received from the server
@@ -178,6 +190,30 @@ const Chat = () => {
 
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [isLoading]);
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "auto" }), [streamedAnswers]);
+
+    useEffect(() => {
+        setIsLoadingUsers(true);
+        fetchDemoUsers()
+            .then(users => {
+                setDemoUsers(users);
+                if (!selectedUser && users.length > 0) {
+                    setSelectedUser(users[0]);
+                }
+                setUserLoadError(undefined);
+            })
+            .catch(err => setUserLoadError(err.message))
+            .finally(() => setIsLoadingUsers(false));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const previousUserEmail = useRef<string | undefined>();
+    useEffect(() => {
+        if (previousUserEmail.current && previousUserEmail.current !== selectedUser?.email) {
+            clearChat();
+        }
+        previousUserEmail.current = selectedUser?.email;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedUser?.email]);
 
     const onPromptTemplateChange = (_ev?: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
         setPromptTemplate(newValue || "");
@@ -270,6 +306,23 @@ const Chat = () => {
         }
     ];
 
+    const userOptions = useMemo(() => demoUsers.map(user => ({
+        key: user.email,
+        text: `${user.displayName} (${user.email})`,
+        data: user
+    })), [demoUsers]);
+
+    const dropdownStyles: Partial<IDropdownStyles> = useMemo(() => ({
+        dropdown: { width: "100%" }
+    }), []);
+
+    const selectedUserAccountLabel = selectedUser ? `Cuenta ${selectedUser.accountId} · ${selectedUser.currency}` : "";
+
+    const handleUserChange = (_event: React.FormEvent<HTMLDivElement>, option?: IDropdownOption<any>) => {
+        const user = option?.data as DemoUser | undefined;
+        setSelectedUser(user);
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.commandsContainer}>
@@ -351,11 +404,33 @@ const Chat = () => {
                     <div className={styles.chatInput}>
                         <QuestionInput
                             clearOnSend
-                            placeholder="Escribe una nueva pregunta"
-                            disabled={isLoading}
+                            placeholder={selectedUser ? `Escribe una nueva pregunta para ${selectedUser.displayName}` : "Selecciona un usuario para comenzar"}
+                            disabled={isLoading || !selectedUser}
                             onSend={question => makeApiRequest(question)}
                         />
                     </div>
+                </div>
+
+                <div className={styles.sessionInspector}>
+                    <div className={styles.userSelectorCard}>
+                        <h2 className={styles.userSelectorTitle}>Contexto de cliente</h2>
+                        <p className={styles.userSelectorDescription}>
+                            Escoge con qué titular se ejecutarán las consultas y pagos de esta sesión.
+                        </p>
+                        <Dropdown
+                            placeholder={isLoadingUsers ? "Cargando usuarios..." : "Selecciona un usuario"}
+                            options={userOptions}
+                            selectedKey={selectedUser?.email}
+                            onChange={handleUserChange}
+                            styles={dropdownStyles}
+                            disabled={isLoadingUsers || userOptions.length === 0}
+                        />
+                        {selectedUserAccountLabel && (
+                            <span className={styles.userSummary}>{selectedUserAccountLabel}</span>
+                        )}
+                        {userLoadError && <span className={styles.userError}>{userLoadError}</span>}
+                    </div>
+                    <LogStreamPanel currentUserEmail={selectedUser?.email} />
                 </div>
 
                 {answers.length > 0 && activeAnalysisPanelTab && (

@@ -3,6 +3,9 @@ package com.microsoft.openai.samples.assistant.controller;
 
 
 import com.microsoft.openai.samples.assistant.langchain4j.agent.SupervisorAgent;
+import com.microsoft.openai.samples.assistant.langchain4j.factory.SupervisorAgentFactory;
+import com.microsoft.openai.samples.assistant.session.DemoUser;
+import com.microsoft.openai.samples.assistant.session.DemoUserRegistry;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -24,10 +27,12 @@ import java.util.List;
 public class ChatController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
-    private final SupervisorAgent supervisorAgent;
+    private final SupervisorAgentFactory supervisorAgentFactory;
+    private final DemoUserRegistry demoUserRegistry;
 
-    public ChatController(SupervisorAgent supervisorAgent){
-        this.supervisorAgent = supervisorAgent;
+    public ChatController(SupervisorAgentFactory supervisorAgentFactory, DemoUserRegistry demoUserRegistry){
+        this.supervisorAgentFactory = supervisorAgentFactory;
+        this.demoUserRegistry = demoUserRegistry;
     }
 
 
@@ -50,8 +55,21 @@ public class ChatController {
 
         List<ChatMessage> chatHistory = convertToLangchain4j(chatRequest);
 
+        String requestedUserEmail = null;
+        if (chatRequest.context() != null) {
+            requestedUserEmail = chatRequest.context().userEmail();
+        }
 
-        LOGGER.debug("Processing chat conversation..", chatHistory.get(chatHistory.size()-1));
+        DemoUser effectiveUser = demoUserRegistry.findByEmail(requestedUserEmail)
+                .orElseGet(demoUserRegistry::defaultUser);
+
+        if (requestedUserEmail != null && !effectiveUser.email().equalsIgnoreCase(requestedUserEmail)) {
+            LOGGER.warn("Requested demo user [{}] was not recognised. Falling back to [{}]", requestedUserEmail, effectiveUser.email());
+        }
+
+        LOGGER.debug("Processing chat conversation for user [{}]", effectiveUser.email());
+
+        SupervisorAgent supervisorAgent = supervisorAgentFactory.createForUser(effectiveUser.email());
 
         List<ChatMessage> agentsResponse = supervisorAgent.invoke(chatHistory);
 

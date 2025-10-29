@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DefaultButton, Toggle } from "@fluentui/react";
 
+import { BACKEND_URI } from "../../api";
+
 import styles from "./LogStreamPanel.module.css";
 
 type LogEvent = {
@@ -19,6 +21,17 @@ const formatLogLine = (entry: LogEvent) => {
     return `${entry.timestamp} [${entry.thread}] ${entry.level} ${entry.logger} - ${entry.message}${context}${exception}`;
 };
 
+const normalizedBackendUri = (BACKEND_URI || "").replace(/\/$/, "");
+const API_BASE = normalizedBackendUri.length > 0 ? normalizedBackendUri : "/api";
+const STREAM_ENDPOINT = `${API_BASE}/logs/stream`;
+const HISTORY_ENDPOINT = `${API_BASE}/logs`;
+
+type LogStreamPanelProps = {
+    currentUserEmail?: string;
+};
+
+export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
+    const [isVisible, setIsVisible] = useState<boolean>(true);
 const STREAM_ENDPOINT = "/api/logs/stream";
 const HISTORY_ENDPOINT = "/api/logs";
 
@@ -28,6 +41,7 @@ export const LogStreamPanel = () => {
     const [error, setError] = useState<string | undefined>();
     const eventSourceRef = useRef<EventSource | null>(null);
     const logEndRef = useRef<HTMLDivElement | null>(null);
+    const mcpLogEndRef = useRef<HTMLDivElement | null>(null);
 
     const handleToggle = (_: React.MouseEvent<HTMLElement>, checked?: boolean) => {
         setIsVisible(!!checked);
@@ -69,6 +83,7 @@ export const LogStreamPanel = () => {
                 }
             });
 
+        const eventSource = new EventSource(STREAM_ENDPOINT, { withCredentials: true });
         const eventSource = new EventSource(STREAM_ENDPOINT);
         eventSource.addEventListener("log", event => {
             try {
@@ -110,6 +125,17 @@ export const LogStreamPanel = () => {
         }
     }, [logs, isVisible]);
 
+    const mcpLogs = useMemo(
+        () => logs.filter(entry => entry.logger?.toLowerCase().includes("mcp") || /Executing .*|Response from/.test(entry.message)),
+        [logs]
+    );
+
+    useEffect(() => {
+        if (isVisible && mcpLogs.length > 0) {
+            mcpLogEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [mcpLogs, isVisible]);
+
     useEffect(() => () => stopStreaming(), [stopStreaming]);
 
     const downloadContent = useMemo(() => logs.map(formatLogLine).join("\n\n"), [logs]);
@@ -127,6 +153,9 @@ export const LogStreamPanel = () => {
         URL.revokeObjectURL(url);
     };
 
+    const hasLogs = logs.length > 0;
+    const hasMcpLogs = mcpLogs.length > 0;
+
     return (
         <aside className={styles.wrapper} aria-live="polite">
             <div className={styles.header}>
@@ -140,6 +169,9 @@ export const LogStreamPanel = () => {
                 />
             </div>
             <p className={styles.description}>
+                {currentUserEmail
+                    ? `Observa la actividad generada para ${currentUserEmail}.`
+                    : "Selecciona un usuario para contextualizar los eventos registrados."}
                 Activa el panel para seguir en tiempo real los eventos internos de la aplicación.
             </p>
             <DefaultButton
@@ -147,6 +179,48 @@ export const LogStreamPanel = () => {
                 text="Descargar"
                 className={styles.downloadButton}
                 onClick={onDownload}
+                disabled={!isVisible || !hasLogs}
+            />
+            <div className={isVisible ? styles.sections : styles.hidden}>
+                <section className={styles.section} aria-label="Bitácora general">
+                    <div className={styles.sectionHeader}>
+                        <h3 className={styles.sectionTitle}>Bitácora general</h3>
+                    </div>
+                    <div className={styles.logViewport}>
+                        {error ? (
+                            <div className={styles.feedback} role="alert">
+                                {error}
+                            </div>
+                        ) : !hasLogs ? (
+                            <div className={styles.feedback}>Aún no se han producido eventos.</div>
+                        ) : (
+                            logs.map((entry, index) => (
+                                <pre key={`${entry.timestamp}-${index}`} className={styles.logEntry}>
+                                    {formatLogLine(entry)}
+                                </pre>
+                            ))
+                        )}
+                        <div ref={logEndRef} />
+                    </div>
+                </section>
+                <section className={styles.section} aria-label="Interacciones MCP">
+                    <div className={styles.sectionHeader}>
+                        <h3 className={styles.sectionTitle}>Intercambios con servidores MCP</h3>
+                        <span className={styles.mcpBadge}>{hasMcpLogs ? `${mcpLogs.length}` : "0"}</span>
+                    </div>
+                    <div className={styles.logViewport}>
+                        {!hasMcpLogs ? (
+                            <div className={styles.feedback}>No hay solicitudes MCP registradas todavía.</div>
+                        ) : (
+                            mcpLogs.map((entry, index) => (
+                                <pre key={`mcp-${entry.timestamp}-${index}`} className={styles.logEntry}>
+                                    {formatLogLine(entry)}
+                                </pre>
+                            ))
+                        )}
+                        <div ref={mcpLogEndRef} />
+                    </div>
+                </section>
                 disabled={!isVisible || logs.length === 0}
             />
             <div className={isVisible ? styles.logViewport : styles.logViewportHidden}>
