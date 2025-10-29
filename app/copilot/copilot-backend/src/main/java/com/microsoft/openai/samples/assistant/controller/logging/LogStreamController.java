@@ -3,6 +3,7 @@ package com.microsoft.openai.samples.assistant.controller.logging;
 import com.microsoft.openai.samples.assistant.logging.LogEvent;
 import com.microsoft.openai.samples.assistant.logging.LogStreamingService;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/logs")
+@CrossOrigin(origins = "${api.allow.origins:*}", allowCredentials = "true")
 public class LogStreamController {
 
     private final LogStreamingService logStreamingService;

@@ -21,6 +21,10 @@ const formatLogLine = (entry: LogEvent) => {
     return `${entry.timestamp} [${entry.thread}] ${entry.level} ${entry.logger} - ${entry.message}${context}${exception}`;
 };
 
+const MAX_LOGS = 500;
+const logSignature = (entry: LogEvent) =>
+    `${entry.timestamp}|${entry.level}|${entry.logger}|${entry.thread}|${entry.message}|${entry.exception ?? ""}`;
+
 const normalizedBackendUri = (BACKEND_URI || "").replace(/\/$/, "");
 const API_BASE = normalizedBackendUri.length > 0 ? normalizedBackendUri : "/api";
 const STREAM_ENDPOINT = `${API_BASE}/logs/stream`;
@@ -32,28 +36,73 @@ type LogStreamPanelProps = {
 
 export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
     const [isVisible, setIsVisible] = useState<boolean>(true);
-const STREAM_ENDPOINT = "/api/logs/stream";
-const HISTORY_ENDPOINT = "/api/logs";
-
-export const LogStreamPanel = () => {
-    const [isVisible, setIsVisible] = useState<boolean>(false);
     const [logs, setLogs] = useState<LogEvent[]>([]);
     const [error, setError] = useState<string | undefined>();
+    const [isFetchingHistory, setIsFetchingHistory] = useState<boolean>(false);
     const eventSourceRef = useRef<EventSource | null>(null);
     const logEndRef = useRef<HTMLDivElement | null>(null);
     const mcpLogEndRef = useRef<HTMLDivElement | null>(null);
 
-    const handleToggle = (_: React.MouseEvent<HTMLElement>, checked?: boolean) => {
+    const handleToggle = (_event?: unknown, checked?: boolean) => {
         setIsVisible(!!checked);
     };
 
+    const resolveLevelClass = useCallback((level?: string) => {
+        if (!level) {
+            return "";
+        }
+
+        const normalized = level.toUpperCase();
+
+        if (normalized.includes("ERROR") || normalized.includes("SEVERE") || normalized.includes("FATAL")) {
+            return styles.logEntryError;
+        }
+
+        if (normalized.includes("WARN")) {
+            return styles.logEntryWarn;
+        }
+
+        if (normalized.includes("INFO")) {
+            return styles.logEntryInfo;
+        }
+
+        return "";
+    }, []);
+
     const appendLog = useCallback((entry: LogEvent) => {
         setLogs(prev => {
+            const key = logSignature(entry);
+            if (prev.some(existing => logSignature(existing) === key)) {
+                return prev;
+            }
             const next = [...prev, entry];
-            if (next.length > 500) {
-                return next.slice(next.length - 500);
+            if (next.length > MAX_LOGS) {
+                return next.slice(next.length - MAX_LOGS);
             }
             return next;
+        });
+    }, []);
+
+    const mergeHistory = useCallback((history: LogEvent[]) => {
+        if (history.length === 0) {
+            return;
+        }
+
+        const historyKeys = new Set(history.map(logSignature));
+
+        setLogs(prev => {
+            const merged: LogEvent[] = [...history];
+            prev.forEach(item => {
+                const key = logSignature(item);
+                if (!historyKeys.has(key)) {
+                    merged.push(item);
+                }
+            });
+
+            if (merged.length > MAX_LOGS) {
+                return merged.slice(merged.length - MAX_LOGS);
+            }
+            return merged;
         });
     }, []);
 
@@ -65,6 +114,7 @@ export const LogStreamPanel = () => {
     const startStreaming = useCallback(() => {
         stopStreaming();
         setError(undefined);
+        setIsFetchingHistory(true);
 
         const controller = new AbortController();
 
@@ -74,26 +124,31 @@ export const LogStreamPanel = () => {
                     throw new Error("No se pudo obtener el historial de logs");
                 }
                 const history = (await response.json()) as LogEvent[];
-                setLogs(history);
+                mergeHistory(history);
                 setError(undefined);
             })
             .catch(err => {
                 if (err.name !== "AbortError") {
                     setError(err.message);
                 }
+            })
+            .finally(() => {
+                setIsFetchingHistory(false);
             });
 
-        const eventSource = new EventSource(STREAM_ENDPOINT, { withCredentials: true });
-        const eventSource = new EventSource(STREAM_ENDPOINT);
-        eventSource.addEventListener("log", event => {
+        const handleMessage = (event: MessageEvent) => {
             try {
-                const parsed = JSON.parse((event as MessageEvent).data) as LogEvent;
+                const parsed = JSON.parse(event.data) as LogEvent;
                 setError(undefined);
                 appendLog(parsed);
             } catch (e) {
                 console.error("Error al parsear evento de log", e);
             }
-        });
+        };
+
+        const eventSource = new EventSource(STREAM_ENDPOINT);
+        eventSource.addEventListener("log", event => handleMessage(event as MessageEvent));
+        eventSource.onmessage = handleMessage;
         eventSource.onerror = () => {
             setError("Se perdió la conexión con el servicio de logs");
         };
@@ -104,7 +159,7 @@ export const LogStreamPanel = () => {
             controller.abort();
             stopStreaming();
         };
-    }, [appendLog, stopStreaming]);
+    }, [appendLog, mergeHistory, stopStreaming]);
 
     useEffect(() => {
         if (isVisible) {
@@ -116,17 +171,23 @@ export const LogStreamPanel = () => {
 
         setLogs([]);
         setError(undefined);
+        setIsFetchingHistory(false);
         stopStreaming();
     }, [isVisible, startStreaming, stopStreaming]);
 
     useEffect(() => {
-        if (isVisible) {
+        if (isVisible && logs.length > 0) {
             logEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }
     }, [logs, isVisible]);
 
     const mcpLogs = useMemo(
-        () => logs.filter(entry => entry.logger?.toLowerCase().includes("mcp") || /Executing .*|Response from/.test(entry.message)),
+        () =>
+            logs.filter(
+                entry =>
+                    entry.logger?.toLowerCase().includes("mcp") ||
+                    /(?:Executing\s.+|Response from)/i.test(entry.message)
+            ),
         [logs]
     );
 
@@ -172,7 +233,6 @@ export const LogStreamPanel = () => {
                 {currentUserEmail
                     ? `Observa la actividad generada para ${currentUserEmail}.`
                     : "Selecciona un usuario para contextualizar los eventos registrados."}
-                Activa el panel para seguir en tiempo real los eventos internos de la aplicación.
             </p>
             <DefaultButton
                 iconProps={{ iconName: "Download" }}
@@ -191,14 +251,20 @@ export const LogStreamPanel = () => {
                             <div className={styles.feedback} role="alert">
                                 {error}
                             </div>
+                        ) : isFetchingHistory && !hasLogs ? (
+                            <div className={styles.feedback}>Cargando historial de logs...</div>
                         ) : !hasLogs ? (
                             <div className={styles.feedback}>Aún no se han producido eventos.</div>
                         ) : (
-                            logs.map((entry, index) => (
-                                <pre key={`${entry.timestamp}-${index}`} className={styles.logEntry}>
-                                    {formatLogLine(entry)}
-                                </pre>
-                            ))
+                            logs.map((entry, index) => {
+                                const levelClass = resolveLevelClass(entry.level);
+                                const className = [styles.logEntry, levelClass].filter(Boolean).join(" ");
+                                return (
+                                    <pre key={`${entry.timestamp}-${index}`} className={className}>
+                                        {formatLogLine(entry)}
+                                    </pre>
+                                );
+                            })
                         )}
                         <div ref={logEndRef} />
                     </div>
@@ -212,32 +278,19 @@ export const LogStreamPanel = () => {
                         {!hasMcpLogs ? (
                             <div className={styles.feedback}>No hay solicitudes MCP registradas todavía.</div>
                         ) : (
-                            mcpLogs.map((entry, index) => (
-                                <pre key={`mcp-${entry.timestamp}-${index}`} className={styles.logEntry}>
-                                    {formatLogLine(entry)}
-                                </pre>
-                            ))
+                            mcpLogs.map((entry, index) => {
+                                const levelClass = resolveLevelClass(entry.level);
+                                const className = [styles.logEntry, levelClass].filter(Boolean).join(" ");
+                                return (
+                                    <pre key={`mcp-${entry.timestamp}-${index}`} className={className}>
+                                        {formatLogLine(entry)}
+                                    </pre>
+                                );
+                            })
                         )}
                         <div ref={mcpLogEndRef} />
                     </div>
                 </section>
-                disabled={!isVisible || logs.length === 0}
-            />
-            <div className={isVisible ? styles.logViewport : styles.logViewportHidden}>
-                {error ? (
-                    <div className={styles.feedback} role="alert">
-                        {error}
-                    </div>
-                ) : logs.length === 0 ? (
-                    <div className={styles.feedback}>No hay eventos para mostrar todavía.</div>
-                ) : (
-                    logs.map((entry, index) => (
-                        <pre key={`${entry.timestamp}-${index}`} className={styles.logEntry}>
-                            {formatLogLine(entry)}
-                        </pre>
-                    ))
-                )}
-                <div ref={logEndRef} />
             </div>
         </aside>
     );
