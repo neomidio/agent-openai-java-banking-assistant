@@ -47,6 +47,28 @@ export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
         setIsVisible(!!checked);
     };
 
+    const resolveLevelClass = useCallback((level?: string) => {
+        if (!level) {
+            return "";
+        }
+
+        const normalized = level.toUpperCase();
+
+        if (normalized.includes("ERROR") || normalized.includes("SEVERE") || normalized.includes("FATAL")) {
+            return styles.logEntryError;
+        }
+
+        if (normalized.includes("WARN")) {
+            return styles.logEntryWarn;
+        }
+
+        if (normalized.includes("INFO")) {
+            return styles.logEntryInfo;
+        }
+
+        return "";
+    }, []);
+
     const appendLog = useCallback((entry: LogEvent) => {
         setLogs(prev => {
             const key = logSignature(entry);
@@ -234,11 +256,15 @@ export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
                         ) : !hasLogs ? (
                             <div className={styles.feedback}>Aún no se han producido eventos.</div>
                         ) : (
-                            logs.map((entry, index) => (
-                                <pre key={`${entry.timestamp}-${index}`} className={styles.logEntry}>
-                                    {formatLogLine(entry)}
-                                </pre>
-                            ))
+                            logs.map((entry, index) => {
+                                const levelClass = resolveLevelClass(entry.level);
+                                const className = [styles.logEntry, levelClass].filter(Boolean).join(" ");
+                                return (
+                                    <pre key={`${entry.timestamp}-${index}`} className={className}>
+                                        {formatLogLine(entry)}
+                                    </pre>
+                                );
+                            })
                         )}
                         <div ref={logEndRef} />
                     </div>
@@ -252,11 +278,15 @@ export const LogStreamPanel = ({ currentUserEmail }: LogStreamPanelProps) => {
                         {!hasMcpLogs ? (
                             <div className={styles.feedback}>No hay solicitudes MCP registradas todavía.</div>
                         ) : (
-                            mcpLogs.map((entry, index) => (
-                                <pre key={`mcp-${entry.timestamp}-${index}`} className={styles.logEntry}>
-                                    {formatLogLine(entry)}
-                                </pre>
-                            ))
+                            mcpLogs.map((entry, index) => {
+                                const levelClass = resolveLevelClass(entry.level);
+                                const className = [styles.logEntry, levelClass].filter(Boolean).join(" ");
+                                return (
+                                    <pre key={`mcp-${entry.timestamp}-${index}`} className={className}>
+                                        {formatLogLine(entry)}
+                                    </pre>
+                                );
+                            })
                         )}
                         <div ref={mcpLogEndRef} />
                     </div>

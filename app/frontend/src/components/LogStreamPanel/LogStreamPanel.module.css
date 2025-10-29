@@ -90,6 +90,18 @@
     word-break: break-word;
 }
 
+.logEntryInfo {
+    color: #cbd5f5;
+}
+
+.logEntryWarn {
+    color: #fde68a;
+}
+
+.logEntryError {
+    color: #fca5a5;
+}
+
 .feedback {
     color: #cbd5f5;
     font-size: 0.85rem;
